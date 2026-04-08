@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450">
+  <rect width="800" height="450" fill="#1e293b"/>
+  <rect x="50" y="50" width="700" height="350" rx="8" fill="#334155"/>
+  <circle cx="400" cy="200" r="80" fill="#3b82f6" opacity="0.3"/>
+  <circle cx="300" cy="200" r="50" fill="#10b981" opacity="0.3"/>
+  <circle cx="500" cy="200" r="50" fill="#f59e0b" opacity="0.3"/>
+  <text x="400" y="330" text-anchor="middle" fill="#64748b" font-size="16" font-family="system-ui">Analytics Chart</text>
+  <text x="400" y="430" text-anchor="middle" fill="#64748b" font-size="18" font-family="system-ui">Screenshot 2</text>
+</svg>
