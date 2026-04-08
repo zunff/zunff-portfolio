@@ -5,6 +5,7 @@ export interface PortfolioConfig {
 
 export interface PersonalInfo {
   name: string
+  nameEn?: string
   avatar: string
   bio: string
   techStack: string[]
@@ -14,6 +15,8 @@ export interface PersonalInfo {
 export interface SocialLinks {
   github?: string
   email?: string
+  linkedin?: string
+  phone?: string
 }
 
 export interface Project {

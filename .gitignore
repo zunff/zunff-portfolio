@@ -34,6 +34,7 @@ coverage/
 #cli
 .agents
 .claude/
-.playwright/
+.playwright-cli
+design-system
 CLAUDE.md
 AGENTS.md

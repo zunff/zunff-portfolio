@@ -1,5 +1,30 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <circle cx="50" cy="50" r="45" fill="#3b82f6" opacity="0.2"/>
-  <circle cx="50" cy="50" r="35" fill="#3b82f6" opacity="0.3"/>
-  <text x="50" y="55" text-anchor="middle" fill="#3b82f6" font-size="24" font-family="system-ui">Avatar</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e293b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0f172a;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="skinGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#fcd5ce;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f8b4a9;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <circle cx="100" cy="100" r="100" fill="url(#bgGradient)"/>
+  
+  <!-- Person Silhouette -->
+  <!-- Head -->
+  <ellipse cx="100" cy="75" rx="35" ry="40" fill="url(#skinGradient)"/>
+  
+  <!-- Body -->
+  <path d="M 50 200 Q 50 140 100 130 Q 150 140 150 200" fill="#334155"/>
+  
+  <!-- Shoulders -->
+  <ellipse cx="100" cy="135" rx="55" ry="20" fill="#334155"/>
+  
+  <!-- Simple facial features suggestion -->
+  <ellipse cx="90" cy="70" rx="3" ry="4" fill="#1e293b" opacity="0.3"/>
+  <ellipse cx="110" cy="70" rx="3" ry="4" fill="#1e293b" opacity="0.3"/>
+  <path d="M 95 85 Q 100 90 105 85" stroke="#1e293b" stroke-width="2" fill="none" opacity="0.3"/>
 </svg>
