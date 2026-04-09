@@ -32,6 +32,7 @@ pnpm-debug.log*
 coverage/
 
 #cli
+.trae
 .agents
 .claude/
 .playwright-cli

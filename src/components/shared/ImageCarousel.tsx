@@ -64,6 +64,8 @@ export function ImageCarousel({ images, alt, className }: ImageCarouselProps) {
         className={cn('group relative overflow-hidden rounded-lg bg-secondary/30', className)}
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
+        onTouchStart={() => setIsPaused(true)}
+        onTouchEnd={() => { setTimeout(() => setIsPaused(false), 3000) }}
       >
         <div className="aspect-video w-full overflow-hidden">
           {images.map((src, index) => (
@@ -94,7 +96,7 @@ export function ImageCarousel({ images, alt, className }: ImageCarouselProps) {
                 e.stopPropagation()
                 goToPrev()
               }}
-              className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-background/80 backdrop-blur-sm p-2 text-foreground opacity-0 group-hover:opacity-100 hover:opacity-100 transition-all duration-200 hover:bg-background cursor-pointer border border-border/50"
+              className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-background/80 backdrop-blur-sm p-2.5 sm:p-2 text-foreground opacity-0 group-hover:opacity-100 hover:opacity-100 transition-all duration-200 hover:bg-background cursor-pointer border border-border/50 min-h-[44px] min-w-[44px] flex items-center justify-center"
               aria-label="Previous image"
             >
               <ChevronLeft className="h-4 w-4" />
@@ -104,7 +106,7 @@ export function ImageCarousel({ images, alt, className }: ImageCarouselProps) {
                 e.stopPropagation()
                 goToNext()
               }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-background/80 backdrop-blur-sm p-2 text-foreground opacity-0 group-hover:opacity-100 hover:opacity-100 transition-all duration-200 hover:bg-background cursor-pointer border border-border/50"
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-background/80 backdrop-blur-sm p-2.5 sm:p-2 text-foreground opacity-0 group-hover:opacity-100 hover:opacity-100 transition-all duration-200 hover:bg-background cursor-pointer border border-border/50 min-h-[44px] min-w-[44px] flex items-center justify-center"
               aria-label="Next image"
             >
               <ChevronRight className="h-4 w-4" />
@@ -122,10 +124,10 @@ export function ImageCarousel({ images, alt, className }: ImageCarouselProps) {
                   goToSlide(index)
                 }}
                 className={cn(
-                  'h-1.5 rounded-full transition-all duration-200',
+                  'h-2 sm:h-1.5 rounded-full transition-all duration-200 cursor-pointer',
                   index === currentIndex
-                    ? 'w-4 bg-primary'
-                    : 'w-1.5 bg-foreground/30 hover:bg-foreground/50 cursor-pointer'
+                    ? 'w-5 sm:w-4 bg-primary'
+                    : 'w-2 sm:w-1.5 bg-foreground/30 hover:bg-foreground/50'
                 )}
                 aria-label={`Go to slide ${index + 1}`}
               />
@@ -142,7 +144,7 @@ export function ImageCarousel({ images, alt, className }: ImageCarouselProps) {
             className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
             onOpenAutoFocus={(e) => e.preventDefault()}
           >
-            <DialogClose className="absolute top-4 right-4 p-2.5 rounded-full bg-white/10 backdrop-blur-md text-white/80 hover:text-white hover:bg-white/20 transition-all cursor-pointer border border-white/10 z-10">
+            <DialogClose className="absolute top-4 right-4 p-2.5 sm:p-2.5 rounded-full bg-white/10 backdrop-blur-md text-white/80 hover:text-white hover:bg-white/20 transition-all cursor-pointer border border-white/10 z-10 min-h-[44px] min-w-[44px] flex items-center justify-center">
               <ChevronRight className="h-5 w-5 rotate-45" />
             </DialogClose>
 
@@ -162,7 +164,7 @@ export function ImageCarousel({ images, alt, className }: ImageCarouselProps) {
                     e.stopPropagation()
                     goToPrev()
                   }}
-                  className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 p-2.5 sm:p-3 rounded-full bg-white/10 backdrop-blur-md text-white/80 hover:text-white hover:bg-white/20 transition-all cursor-pointer border border-white/10"
+                  className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 p-3 sm:p-3 rounded-full bg-white/10 backdrop-blur-md text-white/80 hover:text-white hover:bg-white/20 transition-all cursor-pointer border border-white/10 min-h-[44px] min-w-[44px] flex items-center justify-center"
                   aria-label="Previous image"
                 >
                   <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -172,7 +174,7 @@ export function ImageCarousel({ images, alt, className }: ImageCarouselProps) {
                     e.stopPropagation()
                     goToNext()
                   }}
-                  className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 p-2.5 sm:p-3 rounded-full bg-white/10 backdrop-blur-md text-white/80 hover:text-white hover:bg-white/20 transition-all cursor-pointer border border-white/10"
+                  className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 p-3 sm:p-3 rounded-full bg-white/10 backdrop-blur-md text-white/80 hover:text-white hover:bg-white/20 transition-all cursor-pointer border border-white/10 min-h-[44px] min-w-[44px] flex items-center justify-center"
                   aria-label="Next image"
                 >
                   <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />

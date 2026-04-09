@@ -73,3 +73,28 @@
 img {
   background-color: hsl(var(--muted));
 }
+
+/* 移动端优化 */
+@layer utilities {
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}
+
+/* 防止移动端水平溢出 */
+html, body {
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 移动端触摸优化 */
+@media (max-width: 768px) {
+  button, a, [role="button"] {
+    touch-action: manipulation;
+  }
+}

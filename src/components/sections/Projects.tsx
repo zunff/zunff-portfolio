@@ -115,7 +115,7 @@ export default function Projects() {
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
-                        className="p-2 rounded-lg bg-secondary/50 border border-border text-muted-foreground transition-all duration-200 hover:bg-primary/10 hover:border-primary/50 hover:text-primary cursor-pointer"
+                        className="p-2.5 sm:p-2 rounded-lg bg-secondary/50 border border-border text-muted-foreground transition-all duration-200 hover:bg-primary/10 hover:border-primary/50 hover:text-primary cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
                         aria-label={`View ${project.title} on GitHub`}
                       >
                         <Github className="h-4 w-4" />
@@ -126,7 +126,7 @@ export default function Projects() {
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={(e) => e.stopPropagation()}
-                          className="p-2 rounded-lg bg-primary/10 border border-primary/30 text-primary transition-all duration-200 hover:bg-primary hover:text-primary-foreground cursor-pointer"
+                          className="p-2.5 sm:p-2 rounded-lg bg-primary/10 border border-primary/30 text-primary transition-all duration-200 hover:bg-primary hover:text-primary-foreground cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
                           aria-label={`View ${project.title} demo`}
                         >
                           <ExternalLink className="h-4 w-4" />

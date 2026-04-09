@@ -23,7 +23,7 @@ function CopyButton({ icon: Icon, label, value, displayValue, variant = 'default
     }
   }
 
-  const baseStyles = "flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-200 cursor-pointer min-w-[120px]"
+  const baseStyles = "flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 rounded-lg transition-all duration-200 cursor-pointer min-w-[100px] sm:min-w-[120px]"
   const variantStyles = variant === 'primary' 
     ? "border border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground"
     : "bg-secondary/50 border border-border text-foreground hover:bg-primary/10 hover:border-primary/50 hover:text-primary"
@@ -120,14 +120,14 @@ export default function Hero() {
               )}
             </div>
 
-            <div className="flex items-center gap-3 pt-2">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 pt-2">
               {social.github && (
                 <a
                   href={social.github}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="GitHub Profile"
-                  className="group flex items-center gap-2 px-4 py-2.5 rounded-lg bg-secondary/50 border border-border text-foreground transition-all duration-200 hover:bg-primary/10 hover:border-primary/50 hover:text-primary cursor-pointer"
+                  className="group flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-lg bg-secondary/50 border border-border text-foreground transition-all duration-200 hover:bg-primary/10 hover:border-primary/50 hover:text-primary cursor-pointer"
                 >
                   <Github className="h-5 w-5" />
                   <span className="text-sm font-medium">GitHub</span>
@@ -155,7 +155,7 @@ export default function Hero() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="LinkedIn Profile"
-                  className="group flex items-center gap-2 px-4 py-2.5 rounded-lg bg-secondary/50 border border-border text-foreground transition-all duration-200 hover:bg-primary/10 hover:border-primary/50 hover:text-primary cursor-pointer"
+                  className="group flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-lg bg-secondary/50 border border-border text-foreground transition-all duration-200 hover:bg-primary/10 hover:border-primary/50 hover:text-primary cursor-pointer"
                 >
                   <Linkedin className="h-5 w-5" />
                   <span className="text-sm font-medium">LinkedIn</span>
