@@ -1,4 +1,5 @@
 export interface PortfolioConfig {
+  title: string
   personal: PersonalInfo
   projects: Project[]
 }

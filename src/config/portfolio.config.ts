@@ -1,6 +1,7 @@
 import type { PortfolioConfig } from '@/types/portfolio'
 
 export const portfolioConfig: PortfolioConfig = {
+  title: 'zhaijunhuai',
   personal: {
     name: '翟俊槐',
     nameEn: 'zunff',
