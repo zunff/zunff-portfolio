@@ -12,26 +12,40 @@ interface CopyButtonProps {
 
 function CopyButton({ icon: Icon, label, value, displayValue, variant = 'default' }: CopyButtonProps) {
   const [copied, setCopied] = useState(false)
+  const [showTooltip, setShowTooltip] = useState(false)
 
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(value)
       setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      setShowTooltip(true)
+      setTimeout(() => {
+        setCopied(false)
+        setShowTooltip(false)
+      }, 2000)
     } catch (err) {
       console.error('Failed to copy:', err)
     }
   }
 
+  const handleTouchStart = () => setShowTooltip(true)
+  const handleTouchEnd = () => {
+    if (!copied) {
+      setTimeout(() => setShowTooltip(false), 1500)
+    }
+  }
+
   const baseStyles = "flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 rounded-lg transition-all duration-200 cursor-pointer min-w-[100px] sm:min-w-[120px]"
-  const variantStyles = variant === 'primary' 
+  const variantStyles = variant === 'primary'
     ? "border border-primary/30 text-primary bg-primary/10 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground"
     : "bg-white/5 border border-white/10 text-foreground backdrop-blur-sm hover:bg-primary/20 hover:border-primary/50 hover:text-primary"
 
   return (
-    <div className="relative group">
+    <div className="relative">
       <button
         onClick={handleCopy}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
         aria-label={`Copy ${label}`}
         className={`${baseStyles} ${variantStyles}`}
       >
@@ -47,13 +61,15 @@ function CopyButton({ icon: Icon, label, value, displayValue, variant = 'default
           </>
         )}
       </button>
-      
-      <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200 z-10">
-        <div className="px-3 py-1.5 rounded-md bg-card border border-border shadow-lg whitespace-nowrap">
-          <p className="text-sm text-foreground font-medium">{displayValue || value}</p>
+
+      {(showTooltip || copied) && (
+        <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-10">
+          <div className="px-3 py-1.5 rounded-md bg-card border border-border shadow-lg whitespace-nowrap">
+            <p className="text-sm text-foreground font-medium">{displayValue || value}</p>
+          </div>
+          <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-border" />
         </div>
-        <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-border" />
-      </div>
+      )}
     </div>
   )
 }
@@ -74,15 +90,15 @@ export default function Hero() {
         <div className="grid gap-12 lg:gap-20 lg:grid-cols-[1fr,auto] items-center">
           <div className="space-y-8">
             <div className="space-y-2">
-                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground leading-[1.1]">
-                  {name}
-                </h1>
-                {nameEn && (
-                  <p className="text-xl sm:text-2xl md:text-3xl font-medium text-muted-foreground font-mono">
-                    @{nameEn}
-                  </p>
-                )}
-              </div>
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground leading-[1.1]">
+                {name}
+              </h1>
+              {nameEn && (
+                <p className="text-xl sm:text-2xl md:text-3xl font-medium text-muted-foreground font-mono">
+                  @{nameEn}
+                </p>
+              )}
+            </div>
 
             <p className="text-lg md:text-xl text-muted-foreground max-w-xl leading-relaxed">
               {bio}
@@ -164,16 +180,17 @@ export default function Hero() {
             </div>
           </div>
 
-          <div className="hidden lg:flex flex-col items-center gap-6">
+          {/* Avatar - responsive sizing with single render */}
+          <div className="flex flex-col items-center gap-6 lg:flex-col">
             <div className="relative">
-              <div className="absolute -inset-4 bg-gradient-to-br from-primary/20 to-transparent rounded-full blur-2xl opacity-60" />
+              <div className="absolute -inset-4 lg:-inset-4 bg-gradient-to-br from-primary/20 to-transparent rounded-full blur-2xl lg:blur-2xl opacity-60" />
               <div className="relative p-1 rounded-full bg-gradient-to-br from-primary/30 via-primary/10 to-transparent">
                 <img
                   src={avatar}
                   alt={name}
                   loading="eager"
                   decoding="async"
-                  className="h-52 w-52 xl:h-60 xl:w-60 rounded-full object-cover bg-secondary"
+                  className="h-36 w-36 sm:h-44 sm:w-44 lg:h-52 lg:w-52 xl:h-60 xl:w-60 rounded-full object-cover bg-secondary"
                 />
               </div>
             </div>
@@ -181,25 +198,6 @@ export default function Hero() {
               <Terminal className="h-4 w-4 text-primary" />
               <span>Building the future</span>
             </div>
-          </div>
-        </div>
-
-        <div className="lg:hidden flex flex-col items-center gap-6 mt-12">
-          <div className="relative">
-            <div className="absolute -inset-3 bg-gradient-to-br from-primary/20 to-transparent rounded-full blur-xl opacity-60" />
-            <div className="relative p-1 rounded-full bg-gradient-to-br from-primary/30 via-primary/10 to-transparent">
-              <img
-                src={avatar}
-                alt={name}
-                loading="eager"
-                decoding="async"
-                className="h-36 w-36 sm:h-44 sm:w-44 rounded-full object-cover bg-secondary"
-              />
-            </div>
-          </div>
-          <div className="flex items-center gap-2 text-muted-foreground text-sm font-mono">
-            <Terminal className="h-4 w-4 text-primary" />
-            <span>Building the future</span>
           </div>
         </div>
       </div>

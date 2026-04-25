@@ -9,12 +9,37 @@ interface Particle {
   opacity: number
 }
 
+function getPrimaryColor(): { r: number; g: number; b: number } {
+  if (typeof window === 'undefined') return { r: 34, g: 197, b: 94 }
+  const style = getComputedStyle(document.documentElement)
+  const primary = style.getPropertyValue('--primary').trim()
+  if (!primary) return { r: 34, g: 197, b: 94 }
+  // Parse HSL value (e.g., "160 84% 45%")
+  const [h, s, l] = primary.split(/\s+/).map(v => parseFloat(v))
+  return hslToRgb(h, s, l)
+}
+
+function hslToRgb(h: number, s: number, l: number): { r: number; g: number; b: number } {
+  s /= 100
+  l /= 100
+  const k = (n: number) => (n + h / 30) % 12
+  const a = s * Math.min(l, 1 - l)
+  const f = (n: number) =>
+    l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)))
+  return {
+    r: Math.round(f(0) * 255),
+    g: Math.round(f(8) * 255),
+    b: Math.round(f(4) * 255),
+  }
+}
+
 export function ParticleBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const particlesRef = useRef<Particle[]>([])
   const mouseRef = useRef({ x: 0, y: 0 })
   const animationRef = useRef<number>()
   const reducedMotionRef = useRef(false)
+  const colorRef = useRef({ r: 34, g: 197, b: 94 })
 
   const initParticles = useCallback((width: number, height: number) => {
     const particleCount = Math.min(60, Math.floor((width * height) / 20000))
@@ -41,6 +66,7 @@ export function ParticleBackground() {
     const mouse = mouseRef.current
     const connectionDistance = 120
     const mouseInfluenceRadius = 100
+    const { r, g, b } = colorRef.current
 
     // Draw connections
     for (let i = 0; i < particles.length; i++) {
@@ -52,7 +78,7 @@ export function ParticleBackground() {
         if (distance < connectionDistance) {
           const opacity = (1 - distance / connectionDistance) * 0.15
           ctx.beginPath()
-          ctx.strokeStyle = `rgba(34, 197, 94, ${opacity})`
+          ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${opacity})`
           ctx.lineWidth = 0.5
           ctx.moveTo(particles[i].x, particles[i].y)
           ctx.lineTo(particles[j].x, particles[j].y)
@@ -97,7 +123,7 @@ export function ParticleBackground() {
       // Draw particle
       ctx.beginPath()
       ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2)
-      ctx.fillStyle = `rgba(34, 197, 94, ${particle.opacity})`
+      ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${particle.opacity})`
       ctx.fill()
     })
   }, [])
@@ -118,6 +144,9 @@ export function ParticleBackground() {
     // Check for reduced motion preference
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
     reducedMotionRef.current = mediaQuery.matches
+
+    // Read primary color from CSS variable
+    colorRef.current = getPrimaryColor()
 
     const handleChange = (e: MediaQueryListEvent) => {
       reducedMotionRef.current = e.matches

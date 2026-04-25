@@ -59,6 +59,45 @@ function ProjectDescription({ description, isExpanded, onToggle }: { description
   )
 }
 
+interface StackImageProps {
+  src: string
+  alt: string
+  index: number
+  total: number
+  progress: MotionValue<number>
+  stackStart: number
+  stackDuration: number
+}
+
+function StackImage({ src, alt, index, total, progress, stackStart, stackDuration }: StackImageProps) {
+  const ANIM_RATIO = 0.3
+  const slotStart = stackStart + ((index - 1) / (total - 1)) * stackDuration
+  const slotEnd = stackStart + (index / (total - 1)) * stackDuration
+  const animStart = slotStart
+  const animEnd = slotStart + (slotEnd - slotStart) * ANIM_RATIO
+
+  const y = useTransform(progress, [animStart, animEnd], ["120%", "0%"])
+  const rotate = useTransform(progress, [animStart, animEnd], [index % 2 === 0 ? -2 : 2, 0])
+  const scale = useTransform(progress, [animStart, animEnd], [0.95, 1])
+
+  return (
+    <motion.img
+      src={src}
+      alt={alt}
+      loading="lazy"
+      decoding="async"
+      className="absolute inset-0 w-full h-full object-cover will-change-transform"
+      style={{
+        y,
+        rotate,
+        scale,
+        zIndex: index + 1,
+        boxShadow: index > 0 ? '0 -20px 40px -10px rgba(0,0,0,0.8)' : 'none'
+      }}
+    />
+  )
+}
+
 interface ImageStackProps {
   images: string[]
   alt: string
@@ -67,34 +106,10 @@ interface ImageStackProps {
 
 function ImageStack({ images, alt, progress }: ImageStackProps) {
   const N = images.length
-
   const STACK_START = 0.25
   const STACK_END = 0.70
   const STACK_DURATION = STACK_END - STACK_START
 
-  // Each image slot: short animation burst (ANIM_RATIO) + long dwell (rest)
-  const ANIM_RATIO = 0.3
-
-  const imageTransforms = images.map((_, i) => {
-    if (i === 0) {
-      return { y: "0%", rotate: 0, scale: 1 }
-    }
-
-    // Slot boundaries for this image
-    const slotStart = STACK_START + ((i - 1) / (N - 1)) * STACK_DURATION
-    const slotEnd = STACK_START + (i / (N - 1)) * STACK_DURATION
-    // Animation happens at the start of the slot, dwell occupies the rest
-    const animStart = slotStart
-    const animEnd = slotStart + (slotEnd - slotStart) * ANIM_RATIO
-
-    const y = useTransform(progress, [animStart, animEnd], ["120%", "0%"])
-    const rotate = useTransform(progress, [animStart, animEnd], [i % 2 === 0 ? -2 : 2, 0])
-    const scale = useTransform(progress, [animStart, animEnd], [0.95, 1])
-
-    return { y, rotate, scale }
-  })
-
-  // Calculate active index based on progress
   const activeIndex = useTransform(progress, (p: number) => {
     if (p < STACK_START) return 0
     if (p > STACK_END) return N - 1
@@ -102,8 +117,8 @@ function ImageStack({ images, alt, progress }: ImageStackProps) {
     return Math.min(N - 1, Math.round(normalized * (N - 1)))
   })
 
-  // Progress bar width
   const barWidth = useTransform(progress, [STACK_START, STACK_END], ["0%", "100%"])
+  const counterValue = useTransform(activeIndex, v => v + 1)
 
   return (
     <div
@@ -111,39 +126,36 @@ function ImageStack({ images, alt, progress }: ImageStackProps) {
       onTouchStart={(e) => e.stopPropagation()}
       onTouchMove={(e) => e.stopPropagation()}
     >
-      {images.map((src, i) => {
-        const transforms = imageTransforms[i]
-        
-        return (
-          <motion.img
-            key={src}
-            src={src}
-            alt={`${alt} - ${i + 1}`}
-            loading="lazy"
-            decoding="async"
-            className="absolute inset-0 w-full h-full object-cover will-change-transform"
-            style={{
-              y: transforms.y,
-              rotate: transforms.rotate,
-              scale: transforms.scale,
-              zIndex: i + 1,
-              // Only add shadow if it's not the first image, to give depth
-              boxShadow: i > 0 ? '0 -20px 40px -10px rgba(0,0,0,0.8)' : 'none'
-            }}
-          />
-        )
-      })}
+      {/* First image is always visible */}
+      <img
+        src={images[0]}
+        alt={`${alt} - 1`}
+        loading="lazy"
+        decoding="async"
+        className="absolute inset-0 w-full h-full object-cover"
+        style={{ zIndex: 1 }}
+      />
+      {images.slice(1).map((src, i) => (
+        <StackImage
+          key={src}
+          src={src}
+          alt={`${alt} - ${i + 2}`}
+          index={i + 1}
+          total={N}
+          progress={progress}
+          stackStart={STACK_START}
+          stackDuration={STACK_DURATION}
+        />
+      ))}
 
-      {/* Top-right counter */}
       {N > 1 && (
         <div className="absolute top-3 right-3 px-3 py-1.5 rounded-full bg-black/70 backdrop-blur-md text-white text-xs font-mono font-medium border border-white/10 z-50 pointer-events-none shadow-lg flex items-center gap-1.5">
           <Layers className="h-3 w-3 text-primary" />
-          <motion.span>{useTransform(activeIndex, v => v + 1)}</motion.span>
+          <motion.span>{counterValue}</motion.span>
           <span>/ {N}</span>
         </div>
       )}
 
-      {/* Bottom progress bar */}
       {N > 1 && (
         <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/40 z-50 pointer-events-none">
           <motion.div
@@ -154,6 +166,18 @@ function ImageStack({ images, alt, progress }: ImageStackProps) {
       )}
     </div>
   )
+}
+
+// Animation timeline breakpoints (scroll progress 0 -> 1)
+const T = {
+  cardEnterEnd: 0.08,
+  cardFadeInEnd: 0.05,
+  detailsFadeInEnd: 0.14,
+  expandStart: 0.14,
+  expandEnd: 0.90,
+  detailsFadeOutStart: 0.93,
+  detailsFadeOutEnd: 0.96,
+  exitStart: 0.96,
 }
 
 interface ScrollProjectProps {
@@ -191,72 +215,53 @@ function ScrollProject({ project, index, isLast }: ScrollProjectProps) {
     restDelta: 0.001
   })
 
-  // Animation Timeline (Smooth Progress 0 -> 1):
-  // 0.00 - 0.08: Card slides in fast
-  // 0.08 - 0.14: Details panel fades in
-  // 0.14 - 0.20: ProjectDescription auto-expands (simulating click)
-  // 0.25 - 0.70: Images stack (handled inside ImageStack)
-  // 0.70 - 0.90: TRUE PAUSE (Dwell time). Nothing happens here, just reading time.
-  // 0.90 - 0.93: ProjectDescription auto-collapses (simulating click)
-  // 0.93 - 0.96: Details panel fades out
-  // 0.96 - 1.00: Card slides UP (y) and fades out slightly
-
-  // 1. Card X Position (Slide in - fast)
   const cardX = useTransform(
     smoothProgress,
-    [0, 0.08],
+    [0, T.cardEnterEnd],
     [isMobile ? "0%" : (fromLeft ? "-100%" : "100%"), "0%"]
   )
 
   const cardYEnter = useTransform(
     smoothProgress,
-    [0, 0.08],
+    [0, T.cardEnterEnd],
     [isMobile ? "50%" : "0%", "0%"]
   )
 
-  // 2. Card Y Position (Scroll up at the end)
   const cardYExit = useTransform(
     smoothProgress,
-    [0.96, 1],
+    [T.exitStart, 1],
     isLast ? ["0%", "0%"] : ["0%", "-100%"]
   )
 
-  // Combine Y transforms
   const cardY = useTransform(
     [cardYEnter, cardYExit],
     ([enter, exit]) => {
-      // If we're entering, use enter value. If exiting, use exit value.
-      // Since they don't overlap in the timeline, we can just add them (one will be 0%)
       if (enter !== "0%") return enter
       return exit
     }
   )
 
-  // 3. Card Scale (Slight pop-in effect)
   const cardScale = useTransform(
     smoothProgress,
-    [0, 0.08, 0.96, 1],
+    [0, T.cardEnterEnd, T.exitStart, 1],
     isLast ? [0.8, 1, 1, 1] : [0.8, 1, 1, 0.9]
   )
 
-  // 4. Card Opacity (Fade in fast, fade out at the end)
   const cardOpacity = useTransform(
     smoothProgress,
-    [0, 0.05, 0.96, 1],
+    [0, T.cardFadeInEnd, T.exitStart, 1],
     isLast ? [0, 1, 1, 1] : [0, 1, 1, 0]
   )
 
-  // 5. Details Opacity (Fade in AFTER card arrives, fade out BEFORE card leaves)
   const detailsOpacity = useTransform(
     smoothProgress,
-    [0.08, 0.14, 0.93, 0.96],
+    [T.cardEnterEnd, T.detailsFadeInEnd, T.detailsFadeOutStart, T.detailsFadeOutEnd],
     isLast ? [0, 1, 1, 1] : [0, 1, 1, 0]
   )
 
-  // 6. Details X Offset (Slide in with fade)
   const detailsX = useTransform(
     smoothProgress,
-    [0.08, 0.14, 0.93, 0.96],
+    [T.cardEnterEnd, T.detailsFadeInEnd, T.detailsFadeOutStart, T.detailsFadeOutEnd],
     isLast
       ? [isMobile ? 0 : (fromLeft ? -30 : 30), 0, 0, 0]
       : [isMobile ? 0 : (fromLeft ? -30 : 30), 0, 0, isMobile ? 0 : (fromLeft ? -30 : 30)]
@@ -264,7 +269,7 @@ function ScrollProject({ project, index, isLast }: ScrollProjectProps) {
 
   const detailsY = useTransform(
     smoothProgress,
-    [0.08, 0.14, 0.93, 0.96],
+    [T.cardEnterEnd, T.detailsFadeInEnd, T.detailsFadeOutStart, T.detailsFadeOutEnd],
     isLast
       ? [isMobile ? 30 : 0, 0, 0, 0]
       : [isMobile ? 30 : 0, 0, 0, isMobile ? -30 : 0]
@@ -273,28 +278,30 @@ function ScrollProject({ project, index, isLast }: ScrollProjectProps) {
   // 7. Auto-expand details logic
   const [isExpanded, setIsExpanded] = useState(false)
 
-  // Desktop: auto expand/collapse based on scroll; Mobile: auto collapse when leaving card
-  smoothProgress.on("change", (latest) => {
-    if (isMobile) {
-      // On mobile, auto-collapse when user scrolls away from the card
-      if (latest > 0.95 || latest < 0.05) {
-        setIsExpanded(false)
+  useEffect(() => {
+    const unsubscribe = smoothProgress.on("change", (latest) => {
+      if (isMobile) {
+        if (latest > 0.95 || latest < 0.05) {
+          setIsExpanded(false)
+        }
+        return
       }
-      return
-    }
-    // Expand between 0.14 and 0.90
-    const shouldBeExpanded = latest > 0.14 && latest < 0.90
-    if (isExpanded !== shouldBeExpanded) {
-      setIsExpanded(shouldBeExpanded)
-    }
-  })
+      // Last card stays expanded after reaching expandStart
+      const shouldBeExpanded = isLast
+        ? latest > T.expandStart
+        : latest > T.expandStart && latest < T.expandEnd
+      setIsExpanded(prev => prev !== shouldBeExpanded ? shouldBeExpanded : prev)
+    })
+    return unsubscribe
+  }, [smoothProgress, isMobile])
 
   const handleToggle = () => {
     setIsExpanded(prev => !prev)
   }
 
+  // Last card: no exit animation, needs similar scroll space for images + longer dwell
   const sectionHeight = isLast
-    ? `${(isMobile ? 200 : 80) + (N * (isMobile ? 50 : 15))}vh`
+    ? `${(isMobile ? 380 : 130) + (N * (isMobile ? 75 : 22))}vh`
     : `${(isMobile ? 400 : 140) + (N * (isMobile ? 80 : 25)) + (isMobile ? 80 : 40)}vh`
 
   return (
