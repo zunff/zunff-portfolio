@@ -4,20 +4,20 @@
 
 @layer base {
   :root {
-    --background: 222 47% 11%;
+    --background: 224 35% 16%;
     --foreground: 210 40% 98%;
-    --card: 222 47% 13%;
+    --card: 224 35% 18%;
     --card-foreground: 210 40% 98%;
-    --primary: 160 84% 39%;
+    --primary: 160 84% 45%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 217 33% 17%;
+    --secondary: 224 30% 22%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 160 84% 39%;
+    --muted: 224 30% 22%;
+    --muted-foreground: 215 20% 70%;
+    --accent: 160 84% 45%;
     --accent-foreground: 0 0% 100%;
-    --border: 217 33% 20%;
-    --ring: 160 84% 39%;
+    --border: 224 30% 25%;
+    --ring: 160 84% 45%;
     --radius: 0.75rem;
   }
 }
@@ -87,7 +87,7 @@ img {
 
 /* 防止移动端水平溢出 */
 html, body {
-  overflow-x: hidden;
+  overflow-x: clip;
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
 }

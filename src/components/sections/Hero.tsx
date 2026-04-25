@@ -25,8 +25,8 @@ function CopyButton({ icon: Icon, label, value, displayValue, variant = 'default
 
   const baseStyles = "flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 rounded-lg transition-all duration-200 cursor-pointer min-w-[100px] sm:min-w-[120px]"
   const variantStyles = variant === 'primary' 
-    ? "border border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground"
-    : "bg-secondary/50 border border-border text-foreground hover:bg-primary/10 hover:border-primary/50 hover:text-primary"
+    ? "border border-primary/30 text-primary bg-primary/10 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground"
+    : "bg-white/5 border border-white/10 text-foreground backdrop-blur-sm hover:bg-primary/20 hover:border-primary/50 hover:text-primary"
 
   return (
     <div className="relative group">
@@ -92,7 +92,7 @@ export default function Hero() {
               {techStack.slice(0, 5).map((tech) => (
                 <span
                   key={tech}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary/50 border border-border text-sm text-foreground/80 font-medium transition-colors hover:bg-secondary hover:border-primary/30 shrink-0"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-sm text-foreground/80 font-medium backdrop-blur-sm transition-all duration-300 hover:bg-white/10 hover:border-primary/30 shrink-0"
                 >
                   <Code2 className="h-3.5 w-3.5 text-primary" />
                   {tech}
@@ -100,15 +100,15 @@ export default function Hero() {
               ))}
               {techStack.length > 5 && (
                 <div className="relative group shrink-0">
-                  <span className="inline-flex items-center px-3 py-1.5 rounded-lg bg-secondary/30 border border-border/50 text-sm text-muted-foreground cursor-pointer transition-colors hover:bg-secondary/50 hover:text-foreground">
+                  <span className="inline-flex items-center px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-sm text-muted-foreground backdrop-blur-sm cursor-pointer transition-all duration-300 hover:bg-white/10 hover:text-foreground">
                     +{techStack.length - 5}
                   </span>
                   <div className="absolute left-0 top-full mt-2 pt-2 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200 z-10">
-                    <div className="flex flex-wrap gap-2 p-3 rounded-lg bg-card border border-border shadow-lg max-w-xs">
+                    <div className="flex flex-wrap gap-2 p-3 rounded-lg bg-background/80 backdrop-blur-md border border-white/10 shadow-xl max-w-xs">
                       {techStack.slice(5).map((tech) => (
                         <span
                           key={tech}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-secondary/50 border border-border text-xs text-foreground/80 font-medium"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-xs text-foreground/80 font-medium"
                         >
                           <Code2 className="h-3 w-3 text-primary" />
                           {tech}
@@ -127,7 +127,7 @@ export default function Hero() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="GitHub Profile"
-                  className="group flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-lg bg-secondary/50 border border-border text-foreground transition-all duration-200 hover:bg-primary/10 hover:border-primary/50 hover:text-primary cursor-pointer"
+                  className="group flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-foreground backdrop-blur-sm transition-all duration-300 hover:bg-primary/20 hover:border-primary/50 hover:text-primary cursor-pointer"
                 >
                   <Github className="h-5 w-5" />
                   <span className="text-sm font-medium">GitHub</span>
@@ -155,7 +155,7 @@ export default function Hero() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="LinkedIn Profile"
-                  className="group flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-lg bg-secondary/50 border border-border text-foreground transition-all duration-200 hover:bg-primary/10 hover:border-primary/50 hover:text-primary cursor-pointer"
+                  className="group flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-foreground backdrop-blur-sm transition-all duration-300 hover:bg-primary/20 hover:border-primary/50 hover:text-primary cursor-pointer"
                 >
                   <Linkedin className="h-5 w-5" />
                   <span className="text-sm font-medium">LinkedIn</span>
