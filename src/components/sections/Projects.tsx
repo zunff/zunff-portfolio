@@ -492,9 +492,26 @@ function ScrollProject({ project, index, isLast }: ScrollProjectProps) {
 
 export default function Projects() {
   const { projects } = portfolioConfig
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // Track scroll progress to show "reached bottom" message
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end end"]
+  })
+
+  const [showBottomMessage, setShowBottomMessage] = useState(false)
+
+  useEffect(() => {
+    const unsubscribe = scrollYProgress.on("change", (latest) => {
+      // Show message when scrolled past 95%
+      setShowBottomMessage(latest > 0.95)
+    })
+    return () => unsubscribe()
+  }, [scrollYProgress])
 
   return (
-    <section className="relative">
+    <section ref={containerRef} className="relative">
       {/* Section header */}
       <div className="relative py-12 md:py-16 px-4 md:px-8">
         <motion.div
@@ -555,6 +572,18 @@ export default function Projects() {
       {projects.map((project, index) => (
         <ScrollProject key={project.id} project={project} index={index} isLast={index === projects.length - 1} />
       ))}
+
+      {/* Bottom message */}
+      <motion.div
+        className="py-16 md:py-24 text-center"
+        initial={{ opacity: 0, y: 20 }}
+        animate={showBottomMessage ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+      >
+        <p className="text-lg md:text-xl text-muted-foreground/60 font-light">
+          已经到底了哦～
+        </p>
+      </motion.div>
 
       <div className="h-24 md:h-32" />
     </section>
