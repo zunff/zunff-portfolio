@@ -42,7 +42,7 @@ export function ParticleBackground() {
   const colorRef = useRef({ r: 34, g: 197, b: 94 })
 
   const initParticles = useCallback((width: number, height: number) => {
-    const particleCount = Math.min(60, Math.floor((width * height) / 20000))
+    const particleCount = Math.min(30, Math.floor((width * height) / 30000))
     const particles: Particle[] = []
 
     for (let i = 0; i < particleCount; i++) {
@@ -171,12 +171,27 @@ export function ParticleBackground() {
     window.addEventListener('resize', handleResize)
     window.addEventListener('mousemove', handleMouseMove)
 
-    animate()
+    // Intersection Observer - only animate when visible
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          animate()
+        } else {
+          if (animationRef.current) {
+            cancelAnimationFrame(animationRef.current)
+          }
+        }
+      },
+      { threshold: 0.1 }
+    )
+
+    observer.observe(canvas)
 
     return () => {
       window.removeEventListener('resize', handleResize)
       window.removeEventListener('mousemove', handleMouseMove)
       mediaQuery.removeEventListener('change', handleChange)
+      observer.disconnect()
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current)
       }

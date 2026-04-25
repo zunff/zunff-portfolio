@@ -87,12 +87,14 @@ function StackImage({ src, alt, index, total, progress, stackStart, stackEnd }: 
       alt={alt}
       loading="lazy"
       decoding="async"
-      className="absolute inset-0 w-full h-full object-cover will-change-transform"
+      className="absolute inset-0 w-full h-full object-cover"
       style={{
         y,
         rotate,
         scale,
         zIndex: index + 1,
+        willChange: 'transform',
+        backfaceVisibility: 'hidden',
       }}
     />
   )
@@ -247,83 +249,83 @@ function ScrollProject({ project, index, isLast }: ScrollProjectProps) {
 
   // Implement snap logic with scroll velocity detection
   useEffect(() => {
-    const unsubscribe = scrollYProgress.on("change", (latest) => {
-      const now = Date.now()
-      const deltaTime = now - lastTimeRef.current
-      const deltaProgress = latest - lastProgressRef.current
-      const velocity = deltaTime > 0 ? Math.abs(deltaProgress / deltaTime) : 0
+    let rafId: number | null = null
+    let pendingUpdate = false
 
-      const distanceFromSnap = latest - snapPoint
-      const absDistance = Math.abs(distanceFromSnap)
+    const updateProgress = (latest: number) => {
+      if (pendingUpdate) return
+      pendingUpdate = true
 
-      // Check if we're near the snap point
-      if (absDistance < snapThreshold && latest > TIMELINE.detailsIn.start) {
-        // If currently snapped and user scrolls with enough force, unlock
-        if (isSnappedRef.current) {
-          if (velocity > snapForce || (latest > snapPoint && distanceFromSnap > 0.005)) {
-            isSnappedRef.current = false
-            snapLockRef.current = true
-            animate(smoothProgress, latest, { duration: 0.1 })
+      rafId = requestAnimationFrame(() => {
+        const now = Date.now()
+        const deltaTime = now - lastTimeRef.current
+        const deltaProgress = latest - lastProgressRef.current
+        const velocity = deltaTime > 0 ? Math.abs(deltaProgress / deltaTime) : 0
+
+        const distanceFromSnap = latest - snapPoint
+        const absDistance = Math.abs(distanceFromSnap)
+
+        // Check if we're near the snap point
+        if (absDistance < snapThreshold && latest > TIMELINE.detailsIn.start) {
+          // If currently snapped and user scrolls with enough force, unlock
+          if (isSnappedRef.current) {
+            if (velocity > snapForce || (latest > snapPoint && distanceFromSnap > 0.005)) {
+              isSnappedRef.current = false
+              snapLockRef.current = true
+              animate(smoothProgress, latest, { duration: 0.1 })
+            } else {
+              // Stay snapped
+              smoothProgress.set(snapPoint)
+            }
           } else {
-            // Stay snapped
-            smoothProgress.set(snapPoint)
+            // Not snapped yet - check if we should snap
+            if (velocity < snapForce && distanceFromSnap > -0.015 && distanceFromSnap < 0.005) {
+              // Snap to point
+              isSnappedRef.current = true
+              animate(smoothProgress, snapPoint, { duration: 0.15 })
+            } else {
+              // Continue scrolling normally
+              smoothProgress.set(latest)
+            }
           }
         } else {
-          // Not snapped yet - check if we should snap
-          if (velocity < snapForce && distanceFromSnap > -0.015 && distanceFromSnap < 0.005) {
-            // Snap to point
-            isSnappedRef.current = true
-            animate(smoothProgress, snapPoint, { duration: 0.15 })
-          } else {
-            // Continue scrolling normally
+          // Outside snap zone - normal scrolling
+          if (!snapLockRef.current || absDistance > snapThreshold * 1.5) {
+            snapLockRef.current = false
             smoothProgress.set(latest)
           }
         }
-      } else {
-        // Outside snap zone - normal scrolling
-        if (!snapLockRef.current || absDistance > snapThreshold * 1.5) {
-          snapLockRef.current = false
-          smoothProgress.set(latest)
-        }
-      }
 
-      lastProgressRef.current = latest
-      lastTimeRef.current = now
-    })
+        lastProgressRef.current = latest
+        lastTimeRef.current = now
+        pendingUpdate = false
+      })
+    }
 
-    return () => unsubscribe()
+    const unsubscribe = scrollYProgress.on("change", updateProgress)
+
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId)
+      unsubscribe()
+    }
   }, [scrollYProgress, smoothProgress, snapPoint, snapThreshold, TIMELINE])
 
-  const cardX = useTransform(
-    smoothProgress,
-    [TIMELINE.enter.start, TIMELINE.enter.end],
-    [isMobile ? "0%" : (fromLeft ? "-100%" : "100%"), "0%"]
-  )
+  const enterStartY = isMobile ? "50%" : "0%"
+  const exitEndY = isLast ? "0%" : "-100%"
 
-  const cardYEnter = useTransform(
+  // 简化：移动端只用y变化，桌面端只用x变化，减少Safari的transform计算
+  const cardTranslate = useTransform(
     smoothProgress,
-    [TIMELINE.enter.start, TIMELINE.enter.end],
-    [isMobile ? "50%" : "0%", "0%"]
-  )
-
-  const cardYExit = useTransform(
-    smoothProgress,
-    [TIMELINE.exit.start, TIMELINE.exit.end],
-    isLast ? ["0%", "0%"] : ["0%", "-100%"]
-  )
-
-  const cardY = useTransform(
-    [cardYEnter, cardYExit],
-    ([enter, exit]) => {
-      if (enter !== "0%") return enter
-      return exit
-    }
+    [TIMELINE.enter.start, TIMELINE.enter.end, TIMELINE.exit.start, TIMELINE.exit.end],
+    isMobile
+      ? [enterStartY, "0%", "0%", exitEndY]
+      : [fromLeft ? "-100%" : "100%", "0%", "0%", isLast ? "0%" : "-100%"]
   )
 
   const cardScale = useTransform(
     smoothProgress,
     [TIMELINE.enter.start, TIMELINE.enter.end, TIMELINE.exit.start, TIMELINE.exit.end],
-    isLast ? [0.8, 1, 1, 1] : [0.8, 1, 1, 0.9]
+    isLast ? [0.85, 1, 1, 1] : [0.85, 1, 1, 0.9]
   )
 
   const cardOpacity = useTransform(
@@ -387,12 +389,14 @@ function ScrollProject({ project, index, isLast }: ScrollProjectProps) {
     <div ref={containerRef} className="relative" style={{ height: sectionHeight }}>
       <div className="sticky top-0 h-screen flex items-center justify-center px-4 md:px-8 md:overflow-hidden">
         <motion.article
-          className="relative w-full max-w-6xl rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-xl shadow-2xl overflow-hidden will-change-transform"
+          className="relative w-full max-w-6xl rounded-2xl border border-white/10 bg-white/[0.08] shadow-2xl overflow-hidden"
           style={{
-            x: cardX,
-            y: cardY,
+            x: isMobile ? 0 : cardTranslate,
+            y: isMobile ? cardTranslate : 0,
             scale: cardScale,
             opacity: cardOpacity,
+            willChange: 'transform, opacity',
+            backfaceVisibility: 'hidden',
           }}
         >
           {/* Decorative gradient based on entry side */}
@@ -410,7 +414,7 @@ function ScrollProject({ project, index, isLast }: ScrollProjectProps) {
 
             {/* Image stack - sticky on mobile */}
             <div className={cn(
-              'w-full sticky top-0 z-10 bg-background/80 backdrop-blur-sm md:static md:bg-transparent md:backdrop-blur-none md:flex-shrink-0',
+              'w-full sticky top-0 z-10 bg-background/95 md:static md:bg-transparent md:backdrop-blur-none md:flex-shrink-0',
               index % 2 === 1 && 'md:order-2'
             )}>
               <div className="w-full aspect-[16/9] md:aspect-auto md:max-h-none overflow-hidden">
