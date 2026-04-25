@@ -93,7 +93,6 @@ function StackImage({ src, alt, index, total, progress, stackStart, stackEnd }: 
         rotate,
         scale,
         zIndex: index + 1,
-        boxShadow: index > 0 ? '0 -20px 40px -10px rgba(0,0,0,0.8)' : 'none'
       }}
     />
   )
@@ -122,7 +121,8 @@ function ImageStack({ images, alt, progress, stackStart, stackEnd }: ImageStackP
 
   return (
     <div
-      className="relative aspect-[4/3] md:aspect-video w-full rounded-xl overflow-hidden border border-white/10 bg-black/30 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] touch-none md:touch-auto"
+      className="relative aspect-[4/3] md:aspect-video w-full rounded-xl overflow-hidden border border-white/10 bg-black/30 touch-none md:touch-auto md:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)]"
+      style={{ clipPath: 'inset(0 round 0.75rem)' }}
       onTouchStart={(e) => e.stopPropagation()}
       onTouchMove={(e) => e.stopPropagation()}
     >
@@ -387,7 +387,7 @@ function ScrollProject({ project, index, isLast }: ScrollProjectProps) {
     <div ref={containerRef} className="relative" style={{ height: sectionHeight }}>
       <div className="sticky top-0 h-screen flex items-center justify-center px-4 md:px-8 md:overflow-hidden">
         <motion.article
-          className="relative w-full max-w-6xl rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-xl shadow-2xl md:overflow-hidden will-change-transform"
+          className="relative w-full max-w-6xl rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-xl shadow-2xl overflow-hidden will-change-transform"
           style={{
             x: cardX,
             y: cardY,
