@@ -97,4 +97,14 @@ html, body {
   button, a, [role="button"] {
     touch-action: manipulation;
   }
+
+  /* 限制页面级滚动惯性 */
+  html {
+    overscroll-behavior-y: contain;
+  }
+
+  /* 防止图片轮播区域触摸事件传播到卡片内容 */
+  .touch-none {
+    overscroll-behavior-y: contain;
+  }
 }
