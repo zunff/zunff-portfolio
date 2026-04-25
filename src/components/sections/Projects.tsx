@@ -124,7 +124,6 @@ function ImageStack({ images, alt, progress, stackStart, stackEnd }: ImageStackP
   return (
     <div
       className="relative aspect-video w-full rounded-xl overflow-hidden border border-white/10 bg-black/30 touch-none md:touch-auto md:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)]"
-      style={{ clipPath: 'inset(0 round 0.75rem)' }}
       onTouchStart={(e) => e.stopPropagation()}
       onTouchMove={(e) => e.stopPropagation()}
     >
@@ -414,10 +413,10 @@ function ScrollProject({ project, index, isLast }: ScrollProjectProps) {
 
             {/* Image stack - sticky on mobile */}
             <div className={cn(
-              'w-full sticky top-0 z-10 bg-background/95 md:static md:bg-transparent md:backdrop-blur-none md:flex-shrink-0',
+              'w-full sticky top-0 z-10 bg-transparent md:static md:bg-transparent md:flex-shrink-0',
               index % 2 === 1 && 'md:order-2'
             )}>
-              <div className="w-full aspect-[16/9] md:aspect-auto md:max-h-none overflow-hidden">
+              <div className="w-full aspect-[16/9] md:aspect-auto md:max-h-none">
                 <ImageStack
                   images={project.images}
                   alt={project.title}
