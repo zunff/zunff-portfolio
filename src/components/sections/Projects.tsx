@@ -102,22 +102,22 @@ interface ImageStackProps {
   images: string[]
   alt: string
   progress: MotionValue<number>
+  stackStart: number
+  stackEnd: number
 }
 
-function ImageStack({ images, alt, progress }: ImageStackProps) {
+function ImageStack({ images, alt, progress, stackStart, stackEnd }: ImageStackProps) {
   const N = images.length
-  const STACK_START = 0.25
-  const STACK_END = 0.70
-  const STACK_DURATION = STACK_END - STACK_START
+  const stackDuration = stackEnd - stackStart
 
   const activeIndex = useTransform(progress, (p: number) => {
-    if (p < STACK_START) return 0
-    if (p > STACK_END) return N - 1
-    const normalized = (p - STACK_START) / STACK_DURATION
+    if (p < stackStart) return 0
+    if (p > stackEnd) return N - 1
+    const normalized = (p - stackStart) / stackDuration
     return Math.min(N - 1, Math.round(normalized * (N - 1)))
   })
 
-  const barWidth = useTransform(progress, [STACK_START, STACK_END], ["0%", "100%"])
+  const barWidth = useTransform(progress, [stackStart, stackEnd], ["0%", "100%"])
   const counterValue = useTransform(activeIndex, v => v + 1)
 
   return (
@@ -143,8 +143,8 @@ function ImageStack({ images, alt, progress }: ImageStackProps) {
           index={i + 1}
           total={N}
           progress={progress}
-          stackStart={STACK_START}
-          stackDuration={STACK_DURATION}
+          stackStart={stackStart}
+          stackDuration={stackEnd - stackStart}
         />
       ))}
 
@@ -168,16 +168,16 @@ function ImageStack({ images, alt, progress }: ImageStackProps) {
   )
 }
 
-// Animation timeline breakpoints (scroll progress 0 -> 1)
-const T = {
-  cardEnterEnd: 0.08,
-  cardFadeInEnd: 0.05,
-  detailsFadeInEnd: 0.14,
-  expandStart: 0.14,
-  expandEnd: 0.90,
-  detailsFadeOutStart: 0.93,
-  detailsFadeOutEnd: 0.96,
-  exitStart: 0.96,
+// Animation timeline (scroll progress 0 -> 1)
+const TIMELINE = {
+  enter: { start: 0, end: 0.08 },
+  fadeIn: { start: 0, end: 0.05 },
+  detailsIn: { start: 0.08, end: 0.14 },
+  expand: { start: 0.14, end: 0.90 },
+  stack: { start: 0.25, end: 0.70 },
+  collapse: { start: 0.90, end: 0.93 },
+  detailsOut: { start: 0.93, end: 0.96 },
+  exit: { start: 0.96, end: 1.0 },
 }
 
 interface ScrollProjectProps {
@@ -217,19 +217,19 @@ function ScrollProject({ project, index, isLast }: ScrollProjectProps) {
 
   const cardX = useTransform(
     smoothProgress,
-    [0, T.cardEnterEnd],
+    [TIMELINE.enter.start, TIMELINE.enter.end],
     [isMobile ? "0%" : (fromLeft ? "-100%" : "100%"), "0%"]
   )
 
   const cardYEnter = useTransform(
     smoothProgress,
-    [0, T.cardEnterEnd],
+    [TIMELINE.enter.start, TIMELINE.enter.end],
     [isMobile ? "50%" : "0%", "0%"]
   )
 
   const cardYExit = useTransform(
     smoothProgress,
-    [T.exitStart, 1],
+    [TIMELINE.exit.start, TIMELINE.exit.end],
     isLast ? ["0%", "0%"] : ["0%", "-100%"]
   )
 
@@ -243,25 +243,25 @@ function ScrollProject({ project, index, isLast }: ScrollProjectProps) {
 
   const cardScale = useTransform(
     smoothProgress,
-    [0, T.cardEnterEnd, T.exitStart, 1],
+    [TIMELINE.enter.start, TIMELINE.enter.end, TIMELINE.exit.start, TIMELINE.exit.end],
     isLast ? [0.8, 1, 1, 1] : [0.8, 1, 1, 0.9]
   )
 
   const cardOpacity = useTransform(
     smoothProgress,
-    [0, T.cardFadeInEnd, T.exitStart, 1],
+    [TIMELINE.fadeIn.start, TIMELINE.fadeIn.end, TIMELINE.exit.start, TIMELINE.exit.end],
     isLast ? [0, 1, 1, 1] : [0, 1, 1, 0]
   )
 
   const detailsOpacity = useTransform(
     smoothProgress,
-    [T.cardEnterEnd, T.detailsFadeInEnd, T.detailsFadeOutStart, T.detailsFadeOutEnd],
+    [TIMELINE.detailsIn.start, TIMELINE.detailsIn.end, TIMELINE.detailsOut.start, TIMELINE.detailsOut.end],
     isLast ? [0, 1, 1, 1] : [0, 1, 1, 0]
   )
 
   const detailsX = useTransform(
     smoothProgress,
-    [T.cardEnterEnd, T.detailsFadeInEnd, T.detailsFadeOutStart, T.detailsFadeOutEnd],
+    [TIMELINE.detailsIn.start, TIMELINE.detailsIn.end, TIMELINE.detailsOut.start, TIMELINE.detailsOut.end],
     isLast
       ? [isMobile ? 0 : (fromLeft ? -30 : 30), 0, 0, 0]
       : [isMobile ? 0 : (fromLeft ? -30 : 30), 0, 0, isMobile ? 0 : (fromLeft ? -30 : 30)]
@@ -269,27 +269,25 @@ function ScrollProject({ project, index, isLast }: ScrollProjectProps) {
 
   const detailsY = useTransform(
     smoothProgress,
-    [T.cardEnterEnd, T.detailsFadeInEnd, T.detailsFadeOutStart, T.detailsFadeOutEnd],
+    [TIMELINE.detailsIn.start, TIMELINE.detailsIn.end, TIMELINE.detailsOut.start, TIMELINE.detailsOut.end],
     isLast
       ? [isMobile ? 30 : 0, 0, 0, 0]
       : [isMobile ? 30 : 0, 0, 0, isMobile ? -30 : 0]
   )
 
-  // 7. Auto-expand details logic
   const [isExpanded, setIsExpanded] = useState(false)
 
   useEffect(() => {
     const unsubscribe = smoothProgress.on("change", (latest) => {
       if (isMobile) {
-        if (latest > 0.95 || latest < 0.05) {
+        if (latest > TIMELINE.exit.start || latest < TIMELINE.fadeIn.end) {
           setIsExpanded(false)
         }
         return
       }
-      // Last card stays expanded after reaching expandStart
       const shouldBeExpanded = isLast
-        ? latest > T.expandStart
-        : latest > T.expandStart && latest < T.expandEnd
+        ? latest > TIMELINE.expand.start
+        : latest > TIMELINE.expand.start && latest < TIMELINE.collapse.start
       setIsExpanded(prev => prev !== shouldBeExpanded ? shouldBeExpanded : prev)
     })
     return unsubscribe
@@ -299,10 +297,11 @@ function ScrollProject({ project, index, isLast }: ScrollProjectProps) {
     setIsExpanded(prev => !prev)
   }
 
-  // Last card: no exit animation, needs similar scroll space for images + longer dwell
-  const sectionHeight = isLast
-    ? `${(isMobile ? 380 : 130) + (N * (isMobile ? 75 : 22))}vh`
-    : `${(isMobile ? 400 : 140) + (N * (isMobile ? 80 : 25)) + (isMobile ? 80 : 40)}vh`
+  // All cards use identical height formula for consistent scroll experience
+  const baseHeight = isMobile ? 400 : 140
+  const perImage = isMobile ? 80 : 25
+  const exitPadding = isMobile ? 80 : 40
+  const sectionHeight = `${baseHeight + (N * perImage) + exitPadding}vh`
 
   return (
     <div ref={containerRef} className="relative" style={{ height: sectionHeight }}>
@@ -335,7 +334,13 @@ function ScrollProject({ project, index, isLast }: ScrollProjectProps) {
               index % 2 === 1 && 'md:order-2'
             )}>
               <div className="w-full aspect-[4/3] md:aspect-auto md:max-h-none overflow-hidden">
-                <ImageStack images={project.images} alt={project.title} progress={smoothProgress} />
+                <ImageStack
+                  images={project.images}
+                  alt={project.title}
+                  progress={smoothProgress}
+                  stackStart={TIMELINE.stack.start}
+                  stackEnd={TIMELINE.stack.end}
+                />
               </div>
             </div>
 
