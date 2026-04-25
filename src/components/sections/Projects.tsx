@@ -1,9 +1,9 @@
 import { useRef, useState, useEffect } from 'react'
-import { Github, ExternalLink, Folder, ChevronDown, ChevronUp, Layers } from 'lucide-react'
+import { Github, ExternalLink, Folder, ChevronDown, ChevronUp, Layers, ArrowDown } from 'lucide-react'
 import { portfolioConfig } from '@/config/portfolio.config'
 import { TechBadge } from '@/components/shared/TechBadge'
 import { cn } from '@/lib/utils'
-import { motion, useScroll, useTransform, useSpring, MotionValue } from 'framer-motion'
+import { motion, useScroll, useTransform, useMotionValue, animate, MotionValue } from 'framer-motion'
 import type { Project } from '@/types/portfolio'
 
 function ProjectDescription({ description, isExpanded, onToggle }: { description: string, isExpanded: boolean, onToggle?: () => void }) {
@@ -66,13 +66,14 @@ interface StackImageProps {
   total: number
   progress: MotionValue<number>
   stackStart: number
-  stackDuration: number
+  stackEnd: number
 }
 
-function StackImage({ src, alt, index, total, progress, stackStart, stackDuration }: StackImageProps) {
+function StackImage({ src, alt, index, total, progress, stackStart, stackEnd }: StackImageProps) {
   const ANIM_RATIO = 0.3
-  const slotStart = stackStart + ((index - 1) / (total - 1)) * stackDuration
-  const slotEnd = stackStart + (index / (total - 1)) * stackDuration
+  const stepPerImage = (stackEnd - stackStart) / total
+  const slotStart = stackStart + (index * stepPerImage)
+  const slotEnd = stackStart + ((index + 1) * stepPerImage)
   const animStart = slotStart
   const animEnd = slotStart + (slotEnd - slotStart) * ANIM_RATIO
 
@@ -108,13 +109,12 @@ interface ImageStackProps {
 
 function ImageStack({ images, alt, progress, stackStart, stackEnd }: ImageStackProps) {
   const N = images.length
-  const stackDuration = stackEnd - stackStart
 
   const activeIndex = useTransform(progress, (p: number) => {
     if (p < stackStart) return 0
-    if (p > stackEnd) return N - 1
-    const normalized = (p - stackStart) / stackDuration
-    return Math.min(N - 1, Math.round(normalized * (N - 1)))
+    if (p >= stackEnd) return N - 1
+    const normalized = (p - stackStart) / (stackEnd - stackStart)
+    return Math.min(N - 1, Math.floor(normalized * N))
   })
 
   const barWidth = useTransform(progress, [stackStart, stackEnd], ["0%", "100%"])
@@ -144,7 +144,7 @@ function ImageStack({ images, alt, progress, stackStart, stackEnd }: ImageStackP
           total={N}
           progress={progress}
           stackStart={stackStart}
-          stackDuration={stackEnd - stackStart}
+          stackEnd={stackEnd}
         />
       ))}
 
@@ -168,16 +168,16 @@ function ImageStack({ images, alt, progress, stackStart, stackEnd }: ImageStackP
   )
 }
 
-// Animation timeline (scroll progress 0 -> 1)
-const TIMELINE = {
-  enter: { start: 0, end: 0.08 },
-  fadeIn: { start: 0, end: 0.05 },
-  detailsIn: { start: 0.08, end: 0.14 },
-  expand: { start: 0.14, end: 0.90 },
-  stack: { start: 0.25, end: 0.70 },
-  collapse: { start: 0.90, end: 0.93 },
-  detailsOut: { start: 0.93, end: 0.96 },
-  exit: { start: 0.96, end: 1.0 },
+// Fixed steps in viewport height (vh) for each phase
+// These scale with image count to maintain consistent scroll experience
+const FIXED_STEPS = {
+  // Per image in the stack (vh of scroll distance)
+  perImageVh: 25, // Each image needs 25vh of scroll
+  // Other phases - base values that scale with image count
+  enterBase: 40, // Base height for entry animation
+  detailsInBase: 40,
+  detailsOutBase: 100,
+  exitBase: 100, // Base height for exit animation
 }
 
 interface ScrollProjectProps {
@@ -188,12 +188,19 @@ interface ScrollProjectProps {
 
 function ScrollProject({ project, index, isLast }: ScrollProjectProps) {
   const containerRef = useRef<HTMLDivElement>(null)
-  
+  const lastProgressRef = useRef(0)
+  const lastTimeRef = useRef(Date.now())
+  const isSnappedRef = useRef(false)
+  const snapLockRef = useRef(false)
+
   // Track raw scroll progress
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end end"]
   })
+
+  // Create a controlled motion value for smooth progress with snap behavior
+  const smoothProgress = useMotionValue(0)
 
   const fromLeft = index % 2 === 0
   const [isMobile, setIsMobile] = useState(
@@ -207,13 +214,85 @@ function ScrollProject({ project, index, isLast }: ScrollProjectProps) {
   }, [])
   const N = project.images.length
 
-  // Smooth the scroll progress: mass makes it heavier/slower to respond to fast scroll changes
-  const smoothProgress = useSpring(scrollYProgress, {
-    stiffness: isMobile ? 50 : 80,
-    damping: isMobile ? 60 : 50,
-    mass: isMobile ? 1.5 : 1,
-    restDelta: 0.001
-  })
+  // Calculate total viewport height needed for this project
+  // Enter/exit phases scale with image count to maintain good pacing
+  const scaleFactor = 1 + (N - 1) * 0.3 // Scale up with more images
+  const enterVh = FIXED_STEPS.enterBase * scaleFactor
+  const detailsInVh = FIXED_STEPS.detailsInBase
+  const stackVh = N * FIXED_STEPS.perImageVh
+  const detailsOutVh = FIXED_STEPS.detailsOutBase
+  const exitVh = FIXED_STEPS.exitBase * scaleFactor
+
+  const totalVh = enterVh + detailsInVh + stackVh + detailsOutVh + exitVh
+  const sectionHeight = `${totalVh}vh`
+
+  // Calculate dynamic timeline percentages
+  const enterPercent = enterVh / totalVh
+  const detailsInPercent = detailsInVh / totalVh
+  const stackPercent = stackVh / totalVh
+  const exitPercent = exitVh / totalVh
+
+  const TIMELINE = {
+    enter: { start: 0, end: enterPercent },
+    fadeIn: { start: 0, end: enterPercent * 0.6 },
+    detailsIn: { start: enterPercent, end: enterPercent + detailsInPercent },
+    stack: { start: enterPercent + detailsInPercent, end: enterPercent + detailsInPercent + stackPercent },
+    exit: { start: 1 - exitPercent, end: 1.0 },
+  }
+
+  // Snap point at the start of stack phase (when card is fully expanded)
+  const snapPoint = TIMELINE.stack.start
+  const snapThreshold = 0.03 // Distance to trigger snap behavior
+  const snapForce = 0.01 // Required velocity to break out of snap
+
+  // Implement snap logic with scroll velocity detection
+  useEffect(() => {
+    const unsubscribe = scrollYProgress.on("change", (latest) => {
+      const now = Date.now()
+      const deltaTime = now - lastTimeRef.current
+      const deltaProgress = latest - lastProgressRef.current
+      const velocity = deltaTime > 0 ? Math.abs(deltaProgress / deltaTime) : 0
+
+      const distanceFromSnap = latest - snapPoint
+      const absDistance = Math.abs(distanceFromSnap)
+
+      // Check if we're near the snap point
+      if (absDistance < snapThreshold && latest > TIMELINE.detailsIn.start) {
+        // If currently snapped and user scrolls with enough force, unlock
+        if (isSnappedRef.current) {
+          if (velocity > snapForce || (latest > snapPoint && distanceFromSnap > 0.005)) {
+            isSnappedRef.current = false
+            snapLockRef.current = true
+            animate(smoothProgress, latest, { duration: 0.1 })
+          } else {
+            // Stay snapped
+            smoothProgress.set(snapPoint)
+          }
+        } else {
+          // Not snapped yet - check if we should snap
+          if (velocity < snapForce && distanceFromSnap > -0.015 && distanceFromSnap < 0.005) {
+            // Snap to point
+            isSnappedRef.current = true
+            animate(smoothProgress, snapPoint, { duration: 0.15 })
+          } else {
+            // Continue scrolling normally
+            smoothProgress.set(latest)
+          }
+        }
+      } else {
+        // Outside snap zone - normal scrolling
+        if (!snapLockRef.current || absDistance > snapThreshold * 1.5) {
+          snapLockRef.current = false
+          smoothProgress.set(latest)
+        }
+      }
+
+      lastProgressRef.current = latest
+      lastTimeRef.current = now
+    })
+
+    return () => unsubscribe()
+  }, [scrollYProgress, smoothProgress, snapPoint, snapThreshold, TIMELINE])
 
   const cardX = useTransform(
     smoothProgress,
@@ -255,13 +334,13 @@ function ScrollProject({ project, index, isLast }: ScrollProjectProps) {
 
   const detailsOpacity = useTransform(
     smoothProgress,
-    [TIMELINE.detailsIn.start, TIMELINE.detailsIn.end, TIMELINE.detailsOut.start, TIMELINE.detailsOut.end],
+    [TIMELINE.detailsIn.start, TIMELINE.detailsIn.end, TIMELINE.exit.start, TIMELINE.exit.end],
     isLast ? [0, 1, 1, 1] : [0, 1, 1, 0]
   )
 
   const detailsX = useTransform(
     smoothProgress,
-    [TIMELINE.detailsIn.start, TIMELINE.detailsIn.end, TIMELINE.detailsOut.start, TIMELINE.detailsOut.end],
+    [TIMELINE.detailsIn.start, TIMELINE.detailsIn.end, TIMELINE.exit.start, TIMELINE.exit.end],
     isLast
       ? [isMobile ? 0 : (fromLeft ? -30 : 30), 0, 0, 0]
       : [isMobile ? 0 : (fromLeft ? -30 : 30), 0, 0, isMobile ? 0 : (fromLeft ? -30 : 30)]
@@ -269,13 +348,14 @@ function ScrollProject({ project, index, isLast }: ScrollProjectProps) {
 
   const detailsY = useTransform(
     smoothProgress,
-    [TIMELINE.detailsIn.start, TIMELINE.detailsIn.end, TIMELINE.detailsOut.start, TIMELINE.detailsOut.end],
+    [TIMELINE.detailsIn.start, TIMELINE.detailsIn.end, TIMELINE.exit.start, TIMELINE.exit.end],
     isLast
       ? [isMobile ? 30 : 0, 0, 0, 0]
       : [isMobile ? 30 : 0, 0, 0, isMobile ? -30 : 0]
   )
 
   const [isExpanded, setIsExpanded] = useState(false)
+  const [userInteracted, setUserInteracted] = useState(false)
 
   useEffect(() => {
     const unsubscribe = smoothProgress.on("change", (latest) => {
@@ -285,23 +365,23 @@ function ScrollProject({ project, index, isLast }: ScrollProjectProps) {
         }
         return
       }
+      // Skip auto-control if user recently interacted
+      if (userInteracted) return
+
       const shouldBeExpanded = isLast
-        ? latest > TIMELINE.expand.start
-        : latest > TIMELINE.expand.start && latest < TIMELINE.collapse.start
+        ? latest > TIMELINE.detailsIn.end
+        : latest > TIMELINE.detailsIn.end && latest < TIMELINE.exit.start
       setIsExpanded(prev => prev !== shouldBeExpanded ? shouldBeExpanded : prev)
     })
-    return unsubscribe
-  }, [smoothProgress, isMobile])
+    return () => unsubscribe()
+  }, [smoothProgress, isMobile, userInteracted, isLast, TIMELINE])
 
   const handleToggle = () => {
     setIsExpanded(prev => !prev)
+    setUserInteracted(true)
+    // Reset after 3 seconds to re-enable auto-control
+    setTimeout(() => setUserInteracted(false), 3000)
   }
-
-  // All cards use identical height formula for consistent scroll experience
-  const baseHeight = isMobile ? 400 : 140
-  const perImage = isMobile ? 80 : 25
-  const exitPadding = isMobile ? 80 : 40
-  const sectionHeight = `${baseHeight + (N * perImage) + exitPadding}vh`
 
   return (
     <div ref={containerRef} className="relative" style={{ height: sectionHeight }}>
@@ -416,20 +496,59 @@ export default function Projects() {
   return (
     <section className="relative">
       {/* Section header */}
-      <div className="relative px-4 md:px-8 py-12 md:py-16">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
-              <Folder className="h-5 w-5 text-primary" />
+      <div className="relative py-12 md:py-16 px-4 md:px-8">
+        <motion.div
+          className="max-w-6xl mx-auto text-center"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.8, ease: "easeOut" }}
+        >
+          <motion.div
+            className="inline-flex items-center gap-3 mb-6"
+            initial={{ scale: 0.95 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.5, duration: 0.5 }}
+          >
+            <div className="p-3 rounded-xl bg-primary/10 border border-primary/20 backdrop-blur-sm">
+              <Folder className="h-6 w-6 md:h-7 md:w-7 text-primary" />
             </div>
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-foreground">
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground">
               Projects
             </h2>
-          </div>
-          <p className="mt-3 text-muted-foreground text-sm md:text-base">
-            向下滑动，探索每个项目
-          </p>
-        </div>
+          </motion.div>
+
+          <motion.p
+            className="text-muted-foreground text-base md:text-lg lg:text-xl mb-4 max-w-2xl mx-auto leading-relaxed"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.8, duration: 0.6 }}
+          >
+            Explore my latest work through an interactive showcase
+          </motion.p>
+
+          <motion.div
+            className="flex flex-col items-center gap-2"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1, duration: 0.6 }}
+          >
+            <motion.div
+              className="flex flex-col items-center gap-1 text-muted-foreground"
+              animate={{ y: [0, 8, 0] }}
+              transition={{
+                duration: 1.5,
+                repeat: Infinity,
+                ease: "easeInOut",
+                times: [0, 0.5, 1]
+              }}
+            >
+              <span className="text-xs font-mono tracking-widest uppercase opacity-60">
+                Scroll
+              </span>
+              <ArrowDown className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+            </motion.div>
+          </motion.div>
+        </motion.div>
       </div>
 
       {/* Scroll-driven project sections */}
