@@ -186,6 +186,7 @@ interface ScrollProjectProps {
 
 function ScrollProject({ project, index, isLast }: ScrollProjectProps) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const techStackRef = useRef<HTMLDivElement>(null)
   const lastProgressRef = useRef(0)
   const lastTimeRef = useRef(Date.now())
   const isSnappedRef = useRef(false)
@@ -385,11 +386,24 @@ function ScrollProject({ project, index, isLast }: ScrollProjectProps) {
   }, [smoothProgress, isMobile, userInteracted, isLast, TIMELINE])
 
   const handleToggle = () => {
-    setIsExpanded(prev => !prev)
+    const newExpanded = !isExpanded
+    setIsExpanded(newExpanded)
     setUserInteracted(true)
     // Reset after 3 seconds to re-enable auto-control
     setTimeout(() => setUserInteracted(false), 3000)
   }
+
+  // Collapse details when user swipes to scroll on mobile
+  useEffect(() => {
+    if (!isMobile || !isExpanded) return
+
+    const handleTouchMove = () => {
+      setIsExpanded(false)
+    }
+
+    window.addEventListener('touchmove', handleTouchMove, { passive: true })
+    return () => window.removeEventListener('touchmove', handleTouchMove)
+  }, [isMobile, isExpanded])
 
   return (
     <div ref={containerRef} className="relative" style={{ height: sectionHeight }}>
@@ -416,10 +430,13 @@ function ScrollProject({ project, index, isLast }: ScrollProjectProps) {
           {/* Mobile: flex-col with sticky image; Desktop: 2-col grid */}
           <div className="relative flex flex-col md:grid md:grid-cols-2 gap-4 md:gap-8 md:items-center p-4 md:p-8 lg:p-12 md:max-h-[90vh] md:overflow-y-auto hide-scrollbar">
 
-            {/* Image stack - sticky on mobile */}
+            {/* Image stack - sticky on mobile, hidden when details expanded on mobile */}
             <div className={cn(
-              'w-full sticky top-0 z-10 bg-transparent md:static md:bg-transparent md:flex-shrink-0',
-              index % 2 === 1 && 'md:order-2'
+              'w-full md:static md:bg-transparent md:flex-shrink-0 transition-[max-height,opacity,margin] duration-300 ease-in-out overflow-hidden',
+              // On mobile: sticky top-0 z-10 by default, hidden when expanded
+              isExpanded && isMobile ? 'max-h-0 opacity-0 my-0 sticky top-0 z-10' : 'max-h-[999px] opacity-100 sticky top-0 z-10',
+              index % 2 === 1 && 'md:order-2',
+              'md:max-h-none md:opacity-100 md:transition-none md:overflow-visible'
             )}>
               <div className="w-full aspect-[16/9] md:aspect-auto md:max-h-none">
                 <ImageStack
@@ -444,47 +461,56 @@ function ScrollProject({ project, index, isLast }: ScrollProjectProps) {
                 y: detailsY,
               }}
             >
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-mono text-primary tracking-widest uppercase">
-                  Project / {String(index + 1).padStart(2, '0')}
-                </span>
-                <span className="h-px flex-1 bg-gradient-to-r from-primary/40 to-transparent" />
-              </div>
+              <div
+                className={cn(
+                  'grid transition-[grid-template-rows,opacity] duration-300 ease-in-out md:!grid-rows-[1fr] md:opacity-100 md:transition-none',
+                  isExpanded && isMobile ? 'grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr] opacity-100'
+                )}
+              >
+                <div className="overflow-hidden flex flex-col gap-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-mono text-primary tracking-widest uppercase">
+                      Project / {String(index + 1).padStart(2, '0')}
+                    </span>
+                    <span className="h-px flex-1 bg-gradient-to-r from-primary/40 to-transparent" />
+                  </div>
 
-              <div className="flex items-start justify-between gap-4">
-                <h3 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-foreground">
-                  {project.title}
-                </h3>
-                <div className="flex gap-2 flex-shrink-0">
-                  <a
-                    href={project.github}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-2.5 rounded-lg bg-white/5 border border-white/10 text-muted-foreground backdrop-blur-sm transition-all duration-300 hover:bg-primary/20 hover:border-primary/50 hover:text-primary cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
-                    aria-label={`View ${project.title} on GitHub`}
-                  >
-                    <Github className="h-4 w-4" />
-                  </a>
-                  {project.demo && (
-                    <a
-                      href={project.demo}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-2.5 rounded-lg bg-primary/20 border border-primary/30 text-primary backdrop-blur-sm transition-all duration-300 hover:bg-primary hover:text-primary-foreground cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
-                      aria-label={`View ${project.title} demo`}
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
-                  )}
+                  <div className="flex items-start justify-between gap-4">
+                    <h3 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-foreground">
+                      {project.title}
+                    </h3>
+                    <div className="flex gap-2 flex-shrink-0">
+                      <a
+                        href={project.github}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2.5 rounded-lg bg-white/5 border border-white/10 text-muted-foreground backdrop-blur-sm transition-all duration-300 hover:bg-primary/20 hover:border-primary/50 hover:text-primary cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
+                        aria-label={`View ${project.title} on GitHub`}
+                      >
+                        <Github className="h-4 w-4" />
+                      </a>
+                      {project.demo && (
+                        <a
+                          href={project.demo}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2.5 rounded-lg bg-primary/20 border border-primary/30 text-primary backdrop-blur-sm transition-all duration-300 hover:bg-primary hover:text-primary-foreground cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
+                          aria-label={`View ${project.title} demo`}
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+
+                  <p className="text-muted-foreground leading-relaxed">{project.summary}</p>
+
+                  <div ref={techStackRef} className="flex flex-wrap gap-2">
+                    {project.techStack.map((tech) => (
+                      <TechBadge key={tech} tech={tech} />
+                    ))}
+                  </div>
                 </div>
-              </div>
-
-              <p className="text-muted-foreground leading-relaxed">{project.summary}</p>
-
-              <div className="flex flex-wrap gap-2">
-                {project.techStack.map((tech) => (
-                  <TechBadge key={tech} tech={tech} />
-                ))}
               </div>
 
               <ProjectDescription description={project.description} isExpanded={isExpanded} onToggle={handleToggle} />
