@@ -77,9 +77,9 @@ function StackImage({ src, alt, index, total, progress, stackStart, stackEnd }: 
   const animStart = slotStart
   const animEnd = slotStart + (slotEnd - slotStart) * ANIM_RATIO
 
+  // Use percentage for y (need full container height to hide), px for rotate
   const y = useTransform(progress, [animStart, animEnd], ["120%", "0%"])
   const rotate = useTransform(progress, [animStart, animEnd], [index % 2 === 0 ? -2 : 2, 0])
-  const scale = useTransform(progress, [animStart, animEnd], [0.95, 1])
 
   return (
     <motion.img
@@ -91,10 +91,7 @@ function StackImage({ src, alt, index, total, progress, stackStart, stackEnd }: 
       style={{
         y,
         rotate,
-        scale,
         zIndex: index + 1,
-        willChange: 'transform',
-        backfaceVisibility: 'hidden',
       }}
     />
   )
@@ -173,7 +170,7 @@ function ImageStack({ images, alt, progress, stackStart, stackEnd }: ImageStackP
 // These scale with image count to maintain consistent scroll experience
 const FIXED_STEPS = {
   // Per image in the stack (vh of scroll distance)
-  perImageVh: 25, // Each image needs 25vh of scroll
+  perImageVh: 40, // Each image needs 40vh of scroll
   // Other phases - base values that scale with image count
   enterBase: 40, // Base height for entry animation
   detailsInBase: 40,
@@ -271,7 +268,7 @@ function ScrollProject({ project, index, isLast }: ScrollProjectProps) {
             if (velocity > snapForce || (latest > snapPoint && distanceFromSnap > 0.005)) {
               isSnappedRef.current = false
               snapLockRef.current = true
-              animate(smoothProgress, latest, { duration: 0.1 })
+              animate(smoothProgress, latest, { type: 'spring', stiffness: 300, damping: 30 })
             } else {
               // Stay snapped
               smoothProgress.set(snapPoint)
@@ -281,7 +278,7 @@ function ScrollProject({ project, index, isLast }: ScrollProjectProps) {
             if (velocity < snapForce && distanceFromSnap > -0.015 && distanceFromSnap < 0.005) {
               // Snap to point
               isSnappedRef.current = true
-              animate(smoothProgress, snapPoint, { duration: 0.15 })
+              animate(smoothProgress, snapPoint, { type: 'spring', stiffness: 200, damping: 25 })
             } else {
               // Continue scrolling normally
               smoothProgress.set(latest)
@@ -309,16 +306,26 @@ function ScrollProject({ project, index, isLast }: ScrollProjectProps) {
     }
   }, [scrollYProgress, smoothProgress, snapPoint, snapThreshold, TIMELINE])
 
-  const enterStartY = isMobile ? "50%" : "0%"
-  const exitEndY = isLast ? "0%" : "-100%"
+  // Desktop: enter from left/right (x-axis), exit upward (y-axis)
+  // Mobile: all on y-axis
+  // Use viewport-based pixel values for Safari performance (avoids % in transforms)
+  const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1920
+  const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 1080
 
-  // 简化：移动端只用y变化，桌面端只用x变化，减少Safari的transform计算
-  const cardTranslate = useTransform(
+  const cardTranslateX = useTransform(
     smoothProgress,
     [TIMELINE.enter.start, TIMELINE.enter.end, TIMELINE.exit.start, TIMELINE.exit.end],
     isMobile
-      ? [enterStartY, "0%", "0%", exitEndY]
-      : [fromLeft ? "-100%" : "100%", "0%", "0%", isLast ? "0%" : "-100%"]
+      ? [0, 0, 0, 0]
+      : [fromLeft ? -viewportWidth : viewportWidth, 0, 0, 0]
+  )
+
+  const cardTranslateY = useTransform(
+    smoothProgress,
+    [TIMELINE.enter.start, TIMELINE.enter.end, TIMELINE.exit.start, TIMELINE.exit.end],
+    isMobile
+      ? [viewportHeight * 0.5, 0, 0, -viewportHeight]
+      : [0, 0, 0, isLast ? 0 : -viewportHeight * 0.6]
   )
 
   const cardScale = useTransform(
@@ -390,12 +397,10 @@ function ScrollProject({ project, index, isLast }: ScrollProjectProps) {
         <motion.article
           className="relative w-full max-w-6xl rounded-2xl border border-white/10 bg-white/[0.08] shadow-2xl overflow-hidden"
           style={{
-            x: isMobile ? 0 : cardTranslate,
-            y: isMobile ? cardTranslate : 0,
+            x: cardTranslateX,
+            y: cardTranslateY,
             scale: cardScale,
             opacity: cardOpacity,
-            willChange: 'transform, opacity',
-            backfaceVisibility: 'hidden',
           }}
         >
           {/* Decorative gradient based on entry side */}

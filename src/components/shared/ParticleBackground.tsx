@@ -171,6 +171,20 @@ export function ParticleBackground() {
     window.addEventListener('resize', handleResize)
     window.addEventListener('mousemove', handleMouseMove)
 
+    // Pause animation when scrolled past one viewport (Hero area)
+    const handleScroll = () => {
+      if (window.scrollY > window.innerHeight) {
+        if (animationRef.current) {
+          cancelAnimationFrame(animationRef.current)
+          animationRef.current = undefined
+        }
+      } else if (!animationRef.current) {
+        animate()
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+
     // Intersection Observer - only animate when visible
     const observer = new IntersectionObserver(
       (entries) => {
@@ -190,6 +204,7 @@ export function ParticleBackground() {
     return () => {
       window.removeEventListener('resize', handleResize)
       window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('scroll', handleScroll)
       mediaQuery.removeEventListener('change', handleChange)
       observer.disconnect()
       if (animationRef.current) {

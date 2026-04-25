@@ -8,7 +8,6 @@ import { portfolioConfig } from '@/config/portfolio.config'
 function App() {
   const firstImages = portfolioConfig.projects.map(p => p.images[0]).filter(Boolean)
 
-  // Scroll to top on page load/refresh
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [])
