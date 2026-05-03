@@ -10,9 +10,10 @@ export const portfolioConfig: PortfolioConfig = {
     techStack: [
       'Java',
       'Spring Boot',
-      'TypeScript',
+      'Spring Cloud',
       'React',
-      'Python',
+      'Vue',
+      'TypeScript',
       'PostgreSQL',
       'Docker',
       'AI Agent',
@@ -27,7 +28,7 @@ export const portfolioConfig: PortfolioConfig = {
     {
       id: 'interview-agent',
       title: 'AI Interview Agent',
-      summary: '基于 Spring AI + LangGraph4j 的多模态 AI 面试系统，支持实时视频分析、Omni 多模态评估（音频75%+语音15%+视频10%）、智能追问，以及 ReAct Agent 简历分析',
+      summary: '基于 Spring AI + LangGraph4j 的多模态 AI 面试系统，支持实时视频分析、智能追问',
       techStack: [
         'Java 21',
         'Spring Boot 3.4',
@@ -37,7 +38,6 @@ export const portfolioConfig: PortfolioConfig = {
         'PostgreSQL',
         'pgvector',
         'WebSocket',
-        'SSE',
         'ReAct Agent',
       ],
       images: [
@@ -53,19 +53,15 @@ export const portfolioConfig: PortfolioConfig = {
     {
       id: 'ticket-booking-backend',
       title: '高并发抢票系统',
-      summary: '基于 Spring Boot 3.2 + Java 21 虚拟线程的微服务架构高并发抢票系统，支持 600+ QPS，采用 Redis Lua + Kafka + MySQL 最终一致性方案',
+      summary: '基于 Spring Boot 3.2 + Java 21 虚拟线程的高并发抢票系统，支持 600+ QPS',
       techStack: [
         'Java 21',
-        'Spring Boot 3.2',
+        'Spring Cloud',
         'Redis',
         'Kafka',
-        'Nacos',
         'Sentinel',
-        'MyBatis-Plus',
-        'Docker',
         'Kubernetes',
         'Prometheus',
-        'Grafana',
       ],
       images: [
         '/images/projects/ticket-booking/01-homepage.webp',
@@ -74,23 +70,22 @@ export const portfolioConfig: PortfolioConfig = {
         '/images/projects/ticket-booking/04-architecture.webp',
       ],
       description:
-        '生产级高并发抢票系统后端，基于 Spring Boot 3.2 + Java 21 虚拟线程构建。核心抢票流程采用 Redis Lua 脚本实现原子化库存扣减和限购校验，配合 Kafka 异步消息队列解耦订单创建与数据库库存扣减。\n\n微服务架构拆分为 5 个核心服务（Gateway、User、Concert、Order、Stock），每个服务独立数据库，通过 Nacos 实现服务注册与发现。集成 Sentinel 实现用户维度限流、服务间调用熔断、Redis 操作熔断保护等多层次防护。Gateway 采用一致性哈希实现 Sticky Session，提升本地缓存命中率。\n\n性能优化成果：通过 Gateway JWT 缓存优化（99%+ 命中率）、JVM 参数调优（G1GC）、虚拟线程启用，在压测中实现 600/s QPS、P95 响应时间 2.78s、失败率仅 0.11%。支持 Kubernetes 部署，配置 HPA 自动扩缩容、Prometheus + Grafana 监控体系。',
+        '生产级高并发抢票系统后端，基于 Spring Cloud + Java 21 虚拟线程构建。采用 Redis Lua + Kafka + MySQL 最终一致性方案，核心抢票流程采用 Redis Lua 脚本实现原子化库存扣减和限购校验，配合 Kafka 异步消息队列解耦订单创建与数据库库存扣减。\n\n微服务架构拆分为 5 个核心服务（Gateway、User、Concert、Order、Stock），每个服务独立数据库，通过 Nacos 实现服务注册与发现。集成 Sentinel 实现用户维度限流、服务间调用熔断、Redis 操作熔断保护等多层次防护。Gateway 采用一致性哈希实现 Sticky Session，提升本地缓存命中率。\n\n性能优化成果：通过 Gateway JWT 缓存优化（99%+ 命中率）、JVM 参数调优（G1GC）、虚拟线程启用，在压测中实现 600/s QPS、P95 响应时间 2.78s、失败率仅 0.11%。支持 Kubernetes 部署，配置 HPA 自动扩缩容、Prometheus + Grafana 监控体系。',
       github: 'https://github.com/zunff/ticket-booking-backend',
     },
     {
       id: 'oj-backend-microservice',
       title: 'OJ 在线判题系统',
-      summary: 'GitHub 68 ⭐️ 在线判题系统，采用 Spring Cloud Alibaba 微服务架构，集成代码沙箱、API开放平台与SDK，支持多语言代码提交与自动判题',
+      summary: 'GitHub 68 ⭐️ 在线判题系统，Spring Cloud 微服务架构，集成代码沙箱与 API 开放平台',
       techStack: [
         'Java 8',
-        'Spring Boot 2.6',
-        'Spring Cloud Alibaba',
-        'Spring Cloud Gateway',
+        'Spring Cloud',
         'Nacos',
         'Sentinel',
         'Seata',
         'RabbitMQ',
         'Redis',
+        'Docker',
       ],
       images: [
         '/images/projects/oj-backend/01-login.webp',
@@ -100,13 +95,13 @@ export const portfolioConfig: PortfolioConfig = {
         '/images/projects/oj-backend/05-create-question.webp',
       ],
       description:
-        '完整的在线判题系统（Online Judge），GitHub 获得 68 ⭐️ 社区认可。包含前端、微服务后端、API开放平台SDK、代码沙箱四个独立模块，覆盖从题目管理、代码提交、安全执行到判题结果反馈的完整闭环。\n\n微服务架构：拆分为网关、用户、题目、判题、开放平台 5 个核心服务，通过 Spring Cloud Gateway 统一入口，Nacos 服务注册与配置中心，各服务独立数据库。判题服务通过 RabbitMQ 异步处理判题请求，代码沙箱采用 Docker 容器隔离执行环境，限制资源使用防止恶意代码攻击，支持 Java、C++、Python 等多语言。\n\nAPI开放平台：开发了 Spring Boot Starter SDK，开发者引入依赖并配置 API Key 即可调用 OJ 平台能力（题目查询、代码提交、结果查询），SDK 内置签名验证、请求重试、错误处理。通过 Sentinel 限流熔断、Seata 分布式事务保证跨服务数据一致性、Redis 缓存热点数据。',
+        '完整的在线判题系统（Online Judge）。包含前端、微服务后端、API开放平台SDK、代码沙箱四个独立模块，覆盖从题目管理、代码提交、安全执行到判题结果反馈的完整闭环。\n\n微服务架构：拆分为网关、用户、题目、判题、开放平台 5 个核心服务，通过 Spring Cloud Gateway 统一入口，Nacos 服务注册与配置中心，各服务独立数据库。判题服务通过 RabbitMQ 异步处理判题请求，代码沙箱采用 Docker 容器隔离执行环境，限制资源使用防止恶意代码攻击，支持 Java、C++、Python 等多语言。\n\nAPI开放平台：开发了 Spring Boot Starter SDK，开发者引入依赖并配置 API Key 即可调用 OJ 平台能力（题目查询、代码提交、结果查询），SDK 内置签名验证、请求重试、错误处理。通过 Sentinel 限流熔断、Seata 分布式事务保证跨服务数据一致性、Redis 缓存热点数据。',
       github: 'https://github.com/zunff/oj-backend-microservice',
     },
     {
       id: 'zun-rpc',
       title: 'Zun-RPC 轻量级 RPC 框架',
-      summary: '基于 Spring Boot Starter 的轻量级 RPC 框架，支持自定义 TCP 协议、Netty 连接池复用、Etcd 服务注册发现、多种序列化方式、负载均衡及容错重试机制',
+      summary: '基于 Spring Boot Starter 的轻量级 RPC 框架，自定义 TCP',
       techStack: [
         'Java 11',
         'Spring Boot 2.6',
@@ -123,13 +118,13 @@ export const portfolioConfig: PortfolioConfig = {
         '/images/projects/zun-rpc/03-call-flow.webp',
       ],
       description:
-        '轻量级 RPC 框架，采用 Spring Boot Starter 模式封装，通过声明式注解 `@ZunRpcService` / `@ZunRpcReference` 实现透明化远程调用。自定义了完整的 TCP 协议栈，基于 Netty 实现高性能通信层。\n\n自定义 17 字节定长协议头 + 变长 Body 的二进制协议，RequestId（雪花算法）实现单连接上的请求-响应多路复用。支持 JDK、Kryo、JSON、Hessian 四种序列化器，通过协议头标记区分。Netty 通信层内置连接池复用和心跳保活机制，Consumer 写空闲 30s 发送心跳，Provider 读空闲 60s 关闭连接。\n\n服务治理：支持 Etcd 注册中心（Watch 服务变更、心跳续期、优雅下线）和直连模式。负载均衡支持随机、轮询、一致性哈希三种策略。容错策略包括快速失败、安全失败、失败自动恢复、失败自动切换。核心组件均通过 `@Bean` + `@ConditionalOnMissingBean` 注册，支持用户自定义扩展。',
+        '轻量级 RPC 框架，采用 Spring Boot Starter 模式封装，通过声明式注解 @ZunRpcService / @ZunRpcReference 实现透明化远程调用。自定义了完整的 TCP 协议栈，基于 Netty 实现高性能通信层。\n\n自定义 17 字节定长协议头 + 变长 Body 的二进制协议，RequestId（雪花算法）实现单连接上的请求-响应多路复用。支持 JDK、Kryo、JSON、Hessian 四种序列化器，通过协议头标记区分。Netty 通信层内置连接池复用和心跳保活机制，Consumer 写空闲 30s 发送心跳，Provider 读空闲 60s 关闭连接。\n\n服务治理：支持 Etcd 注册中心（Watch 服务变更、心跳续期、优雅下线）和直连模式。负载均衡支持随机、轮询、一致性哈希三种策略。容错策略包括快速失败、安全失败、失败自动恢复、失败自动切换。核心组件均通过 `@Bean` + `@ConditionalOnMissingBean` 注册，支持用户自定义扩展。',
       github: 'https://github.com/zunff/zun-rpc',
     },
     {
       id: 'tank-battle-online',
       title: '坦克大战联机版',
-      summary: '基于 JavaFX + Netty 的实时多人坦克大战游戏，自定义 TCP 二进制协议（Protobuf + CRC32），支持 2-10 人同房间对战，20 TPS 游戏时钟',
+      summary: '基于 JavaFX + Netty 的实时多人坦克大战游戏，支持 2-10 人联机对战',
       techStack: [
         'Java 17',
         'JavaFX',
@@ -137,7 +132,6 @@ export const portfolioConfig: PortfolioConfig = {
         'Protobuf',
         'Spring Boot',
         'gRPC',
-        'MySQL',
         'MyBatis-Plus',
       ],
       images: [
